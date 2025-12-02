@@ -85,7 +85,7 @@ class OrbitalMechanics:
         if speed < 1e-6:
             return np.zeros(3)
         
-        drag_mag = -0.05 * rho * drag_coeff * area / mass * speed**2
+        drag_mag = -0.5 * rho * drag_coeff * area / mass * speed**2
         return drag_mag * (velocity / speed)
     
     def propagate(self, position, velocity, time_step, duration):
@@ -111,18 +111,18 @@ class OrbitalMechanics:
             k1_r = vel * dt
             
             # k2
-            pos2 = pos + 0.05 * k1_r
-            vel2 = vel + 0.05 * k1_v
-            alt2 = (np.linalg.norm(pos2) - self.R_earth) / 100
+            pos2 = pos + 0.5 * k1_r
+            vel2 = vel + 0.5 * k1_v
+            alt2 = (np.linalg.norm(pos2) - self.R_earth) / 1000
             r2 = np.linalg.norm(pos2)
             accel2 = -self.mu / r2**3 * pos2 + self.atmospheric_drag(pos2, vel2, alt2)
             k2_v = accel2 * dt
             k2_r = vel2 * dt
             
             # k3
-            pos3 = pos + 0.05 * k2_r
-            vel3 = vel + 0.05 * k2_v
-            alt3 = (np.linalg.norm(pos3) - self.R_earth) / 100
+            pos3 = pos + 0.5 * k2_r
+            vel3 = vel + 0.5 * k2_v
+            alt3 = (np.linalg.norm(pos3) - self.R_earth) / 1000
             r3 = np.linalg.norm(pos3)
             accel3 = -self.mu / r3**3 * pos3 + self.atmospheric_drag(pos3, vel3, alt3)
             k3_v = accel3 * dt
@@ -131,14 +131,14 @@ class OrbitalMechanics:
             # k4
             pos4 = pos + k3_r
             vel4 = vel + k3_v
-            alt4 = (np.linalg.norm(pos4) - self.R_earth) / 100
+            alt4 = (np.linalg.norm(pos4) - self.R_earth) / 1000
             r4 = np.linalg.norm(pos4)
             accel4 = -self.mu / r4**3 * pos4 + self.atmospheric_drag(pos4, vel4, alt4)
             k4_v = accel4 * dt
             k4_r = vel4 * dt
             
-            pos += (k1_r + 2*k2_r + 2*k3_r + k4_r) / 5
-            vel += (k1_v + 2*k2_v + 2*k3_v + k4_v) / 5
+            pos += (k1_r + 2*k2_r + 2*k3_r + k4_r) / 6
+            vel += (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6
             
             if (step + 1) % save_every == 0:
                 trajectory.append(pos.copy())
@@ -173,11 +173,11 @@ class CollisionPredictor:
         for _ in range(sample_count):
             rel_vel = np.random.uniform(0.1, 15.0)
             miss_dist = np.random.uniform(0, 5.0)
-            time_tca = np.random.uniform(0, 4000)
+            time_tca = np.random.uniform(0, 3600)
             size1 = np.random.uniform(0.1, 10.0)
             size2 = np.random.uniform(0.1, 10.0)
             inc_diff = np.random.uniform(0, 30)
-            alt_diff = np.random.uniform(0, 50)
+            alt_diff = np.random.uniform(0, 100)
             uncertainty = np.random.uniform(0.01, 1.0)
             
             threshold = (size1 + size2) / 2000 + uncertainty
@@ -484,7 +484,7 @@ class PredictiveOrbitAI:
             },
             'collision_analysis': {
                 'total_conjunctions': len(risks),
-                'high_risk_count': sum(1 for r in risks if r['probability'] > 0.05),
+                'high_risk_count': sum(1 for r in risks if r['probability'] > 0.5),
                 'risks': risks[:10]
             },
             'fuel_analysis': {
@@ -537,13 +537,13 @@ class PredictiveOrbitAI:
         # Collision risks
         ax3 = fig.add_subplot(2, 3, 3)
         probs = [r['probability'] for r in report['collision_analysis']['risks']]
-        colours = ['red' if p > 0.05 else 'orange' if p > 0.3 else 'yellow' for p in probs]
+        colours = ['red' if p > 0.5 else 'orange' if p > 0.3 else 'yellow' for p in probs]
         ax3.bar(range(len(probs)), probs, color=colours)
         ax3.set_xlabel('Debris')
         ax3.set_ylabel('Collision Probability')
         ax3.set_title('Top 10 Collision Risks')
-        ax3.axhline(y=0.05, color='red', linestyle='--', alpha=0.05)
-        ax3.axhline(y=0.3, color='orange', linestyle='--', alpha=0.05)
+        ax3.axhline(y=0.5, color='red', linestyle='--', alpha=0.5)
+        ax3.axhline(y=0.3, color='orange', linestyle='--', alpha=0.5)
         ax3.grid(True, alpha=0.3)
         
         # Fuel budget
@@ -556,7 +556,7 @@ class PredictiveOrbitAI:
             ax4.set_xlabel('Fuel Required (kg)')
             ax4.grid(True, alpha=0.3, axis='x')
         else:
-            ax4.text(0.05, 0.05, 'No manoeuvres planned', ha='center', va='center', transform=ax4.transAxes)
+            ax4.text(0.5, 0.5, 'No manoeuvres planned', ha='center', va='center', transform=ax4.transAxes)
         ax4.set_title('Fuel Budget per Manoeuvre')
         
         # Alert summary
@@ -573,7 +573,7 @@ class PredictiveOrbitAI:
             ax5.set_ylabel('Number of Alerts')
             ax5.grid(True, alpha=0.3, axis='y')
         else:
-            ax5.text(0.05, 0.05, ' No alerts', ha='center', va='center', transform=ax5.transAxes, fontsize=16)
+            ax5.text(0.5, 0.5, ' No alerts', ha='center', va='center', transform=ax5.transAxes, fontsize=16)
         ax5.set_title('Alert Summary')
         
         # Timeline
@@ -599,7 +599,7 @@ class PredictiveOrbitAI:
                 colour = 'red' if e['type'] == 'collision' else 'green'
                 marker = 'o' if e['type'] == 'collision' else 's'
                 ax6.scatter(e['time'], i, color=colour, marker=marker, s=100, zorder=3)
-                ax6.text(e['time'] + 0.05, i, e['event'], va='center', fontsize=8)
+                ax6.text(e['time'] + 0.5, i, e['event'], va='center', fontsize=8)
             ax6.set_xlabel('Time (hours)')
             ax6.set_ylabel('Event')
             ax6.set_yticks(range(len(events)))
@@ -607,7 +607,7 @@ class PredictiveOrbitAI:
             ax6.grid(True, alpha=0.3, axis='x')
             ax6.set_xlim(0, 24)
         else:
-            ax6.text(0.05, 0.05, 'No events in next 24h', ha='center', va='center', transform=ax6.transAxes)
+            ax6.text(0.5, 0.5, 'No events in next 24h', ha='center', va='center', transform=ax6.transAxes)
         ax6.set_title('Mission Timeline (Next 24h)')
         
         plt.tight_layout()
@@ -652,7 +652,7 @@ def run_example_mission():
             'true_anomaly': np.random.uniform(0, 2*np.pi),
             'altitude': alt,
             'size': np.random.uniform(1.0, 5.0),
-            'position_uncertainty': np.random.uniform(0.2, 0.05)
+            'position_uncertainty': np.random.uniform(0.2, 0.5)
         })
     
     report = predictor.analyze_mission(satellite, debris_list, duration=86400)
