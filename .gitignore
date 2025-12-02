@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated model files
+collision_model.pkl
+
+# Output visualisations
+*.gif
+*_analysis.png
+nav_demo.gif
+navigation_3rd_person.gif
+predictive_orbit_ai_analysis.png
+
